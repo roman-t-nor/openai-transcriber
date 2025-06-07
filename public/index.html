@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en" x-data="transcriberApp()" xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Audio Transcriber</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+</head>
+
+<body class="bg-light">
+  <div class="container py-5">
+    <h1 class="mb-4 text-center">OpenAI Audio Transcriber</h1>
+
+    <!-- Upload Form -->
+    <form @submit.prevent="uploadFile" enctype="multipart/form-data">
+      <div class="mb-3">
+        <label for="file" class="form-label">Select audio file</label>
+        <input type="file" id="file" class="form-control" @change="handleFileChange">
+      </div>
+
+      <div class="mb-3">
+        <label for="format" class="form-label">Transcription format</label>
+        <select class="form-select" x-model="format">
+          <option value="text">Plain Text</option>
+          <option value="srt">SubRip (.srt)</option>
+        </select>
+      </div>
+
+      <button type="submit" class="btn btn-primary w-100" :disabled="uploading">
+        <span x-show="!uploading">Upload & Transcribe</span>
+        <span x-show="uploading">Transcribing...</span>
+      </button>
+    </form>
+
+    <!-- Transcription Result -->
+    <div class="mt-4" x-show="transcript">
+      <h5>Transcription Result</h5>
+      <textarea class="form-control" rows="10" x-model="transcript"></textarea>
+
+      <button class="btn btn-success mt-2" @click="saveResult">Save Result</button>
+    </div>
+  </div>
+
+  <script src="/assets/script.js"></script>
+
+</body>
+</html>
