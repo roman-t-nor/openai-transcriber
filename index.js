@@ -48,16 +48,22 @@ app.post("/transcribe", upload.single("audio"), async (req, res) => {
   }
 
   try {
+    // Process audio file
     const extension = path.extname(file.originalname) || ".mp3";
     const renamedPath = `${file.path}${extension}`;
     fs.renameSync(file.path, renamedPath);
 
-    const transcription = await openai.audio.transcriptions.create({
+    const whisperRequest = {
       file: fs.createReadStream(renamedPath),
       model: "whisper-1",
-      response_format: format, // "text" or "srt"
-      language: "no", // Optional: set your language code
-    });
+      language: "no",
+      response_format: format, // Always get text from gpt-4o-transcribe
+      temperature: 0.0, // More deterministic output
+      prompt: 'Please transcribe this Norwegian audio'
+    };
+
+    let transcription = await openai.audio.transcriptions.create(whisperRequest);
+    transcription = "WEBVTT - Tekstebanken\n\n" + transcription;
 
     // Clean up
     fs.unlinkSync(renamedPath);

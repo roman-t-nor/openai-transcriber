@@ -1,7 +1,7 @@
 function transcriberApp() {
     return {
         file: null,
-        format: 'text',
+        format: 'srt',
         transcript: '',
         uploading: false,
 
