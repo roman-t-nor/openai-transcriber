@@ -29,11 +29,15 @@
       </div>
 
       <button type="submit" class="btn btn-primary w-100" :disabled="uploading">
-        <span x-show="!uploading">Upload & Transcribe</span>
-        <span x-show="uploading" class="d-flex align-items-center justify-content-center">
-          <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-          Transcribing... (This may take a few minutes)
-        </span>
+        <div x-show="!uploading">
+          <span>Upload & Transcribe</span>
+        </div>
+        <div x-show="uploading">        
+          <span class="d-flex align-items-center justify-content-center">
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            Transcribing... (This may take a few minutes)
+          </span>  
+        </div>
       </button>
     </form>
 
@@ -45,13 +49,6 @@
       <button class="btn btn-success mt-2" @click="saveResult">Save Result</button>
     </div>
 
-    <!-- Processing Message -->
-    <div class="mt-4" x-show="uploading">
-      <div class="alert alert-info d-flex align-items-center" role="alert">
-        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-        <span x-text="processingMessage"></span>
-      </div>
-    </div>
   </div>
 
   <script src="/assets/script.js"></script>
