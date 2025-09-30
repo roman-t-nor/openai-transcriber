@@ -47,7 +47,22 @@ app.post("/transcribe", upload.single("audio"), async (req, res) => {
     return res.status(400).send({ error: "No file uploaded." });
   }
 
+  // Check file size (limit to 25MB for Whisper API)
+  const maxSize = 25 * 1024 * 1024; // 25MB
+  if (file.size > maxSize) {
+    fs.unlinkSync(file.path); // Clean up
+    return res.status(400).send({ 
+      error: "File too large. Maximum size is 25MB."  
+    });
+  }
+
+  // Set a longer timeout for this specific request 
+  req.setTimeout(300000); // 5 minutes
+  res.setTimeout(300000); // 5 minutes
+
   try {
+    console.log(`Begin transcribing file: ${file.originalname} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+    
     // Process audio file
     const extension = path.extname(file.originalname) || ".mp3";
     const renamedPath = `${file.path}${extension}`;
@@ -57,24 +72,62 @@ app.post("/transcribe", upload.single("audio"), async (req, res) => {
       file: fs.createReadStream(renamedPath),
       model: "whisper-1",
       language: "no",
-      response_format: format, // Always get text from gpt-4o-transcribe
-      temperature: 0.0, // More deterministic output
+      response_format: format,
+      temperature: 0.0,
       prompt: 'Please transcribe this Norwegian audio'
     };
 
+    console.log("Sending request to OpenAI Whisper API...");
+    const startTime = Date.now();
+    
     let transcription = await openai.audio.transcriptions.create(whisperRequest);
-    transcription = "WEBVTT - Tekstebanken\n\n" + transcription;
+    
+    const processingTime = ((Date.now() - startTime) / 1000).toFixed(2);
+    console.log(`Transcription completed in ${processingTime} seconds`);
+
+    // Format the response based on the requested format
+    if (format === "srt") {
+      transcription = "WEBVTT - Tekstebanken\n\n" + transcription;
+    }
 
     // Clean up
     fs.unlinkSync(renamedPath);
 
-    res.send({ transcript: transcription });
+    res.send({ 
+      transcript: transcription,
+      processingTime: processingTime,
+      fileSize: file.size
+    });
   } catch (err) {
     console.error("Transcription failed:", err);
-    res.status(500).send({
-      error: "Transcription failed",
-      message: err?.message || "Unknown error"
-    });
+    
+    // Clean up file on error
+    try {
+      if (file && file.path) {
+        fs.unlinkSync(file.path);
+      }
+    } catch (cleanupErr) {
+      console.error("Error cleaning up file:", cleanupErr);
+    }
+
+    // Handle specific OpenAI errors
+    if (err.code === 'timeout') {
+      res.status(408).send({
+        error: "Request timeout",
+        message: "The transcription took too long to complete. Please try with a shorter audio file."
+      });
+    } else if (err.status === 413) {
+      res.status(413).send({
+        error: "File too large",
+        message: "The audio file is too large for processing."
+      });
+    } else {
+      console.error("Transcription failed:", err);
+      res.status(500).send({
+        error: "Transcription failed",
+        message: err?.message || "Unknown error"
+      });
+    }
   }
 });
 
